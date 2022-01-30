@@ -120,6 +120,11 @@ class WNode:
     def coa(self):
         return self.meta_safe_get("c")[0]
 
+
+    @property
+    def nameTemplate(self):
+      return self.meta_safe_get("n")[0]
+
     @property
     def trim(self):
         trim = self.meta_safe_get("t")
@@ -290,16 +295,27 @@ class WNode:
         )
         dirPath.mkdir(parents=True, exist_ok=True)
 
-        def appendName(path, name, scale, margin, extension):
+        def appendName(path, filename, nameTemplate, name, scale, margin, extension):
             """
             Appends a formatted name to the path argument
             Returns the full path with the file
             """
             meta_s = self.cfg["meta"]["s"][0]
-            out = name
-            out += "_@{}x".format(scale / 100) if scale != meta_s else ""
-            out += "_m{:03d}".format(margin) if margin else ""
-            out += "." + extension
+            scale_s = "@{}x".format(scale / 100)
+            margin_s = "m{:03d}".format(margin) if margin else ""
+
+            if nameTemplate == self.cfg["meta"]["n"][0]:
+              scale_s = "_" + scale_s if scale != meta_s else ""
+              if  margin:
+                margin_s = "_" + margin_s 
+
+            out = nameTemplate \
+              .replace("{n}", filename) \
+              .replace("{l}", name) \
+              .replace("{s}", scale_s) \
+              .replace("{m}", margin_s) \
+              .replace("{e}", extension)
+
             out = path / out
             return out.as_posix()
 
@@ -310,7 +326,7 @@ class WNode:
                 scale,
                 margin,
                 extension,
-                appendName(dirPath, self.name, scale, margin, extension),
+                appendName(dirPath, KI.activeDocument().name(), self.nameTemplate, self.name, scale, margin, extension),
             ),
             it,
         )
